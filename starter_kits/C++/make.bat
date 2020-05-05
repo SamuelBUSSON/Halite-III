@@ -4,8 +4,8 @@ setlocal EnableExtensions EnableDelayedExpansion
 if defined VisualStudioVersion (
 rem vcvarsall has been called already, don't need to do anything ourselves
 ) else (
-set vcvarsall_location_1="%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat"
-set vcvarsall_location_2="%ProgramFiles%\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat"
+set vcvarsall_location_1="%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat"
+set vcvarsall_location_2="%ProgramFiles%\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat"
 set vcvarsall_location_3="%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\VC\vcvarsall.bat"
 set vcvarsall_location_4="%ProgramFiles%\Microsoft Visual Studio 14.0\VC\vcvarsall.bat"
 set vcvarsall_location_count=4
@@ -46,4 +46,4 @@ cl.exe /FeMyBot.exe /std:c++14 /O2 /MT /EHsc /I . /Fo.\obj\ ^
  .\hlt\log.cpp ^
  .\hlt\player.cpp ^
  .\hlt\ship.cpp ^
- .\MyBot.cpp ^
+ .\GuiSamBot.cpp ^
