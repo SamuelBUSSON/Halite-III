@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
             shared_ptr<Ship> ship = ship_iterator.second;
             if (game_map->at(ship)->halite < constants::MAX_HALITE / 10 || ship->is_full()) {
                 Direction random_direction = ALL_CARDINALS[rng() % 4];
-                command_queue.push_back(ship->move(random_direction));
+                command_queue.push_back(ship->move(Direction::SOUTH));
             } else {
                 command_queue.push_back(ship->stay_still());
             }

@@ -36,7 +36,7 @@ call !vcvarsall_location! !vcvarsall_architecture!
 
 mkdir obj 2> nul
 
-cl.exe /FeMyBot.exe /std:c++14 /O2 /MT /EHsc /I . /Fo.\obj\ ^
+cl.exe /FeGuiSamBot.exe /std:c++14 /O2 /MT /EHsc /I . /Fo.\obj\ ^
  /D_USE_MATH_DEFINES ^
  .\hlt\command.cpp ^
  .\hlt\constants.cpp ^

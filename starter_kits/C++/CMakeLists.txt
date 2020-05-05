@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(MyBot)
+project(GuiSamBot)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -18,7 +18,7 @@ foreach(dir ${dirs})
 endforeach()
 
 include_directories(${CMAKE_SOURCE_DIR})
-set(SOURCE_FILES "${SOURCE_FILES}" MyBot.cpp)
+set(SOURCE_FILES "${SOURCE_FILES}" GuiSamBot.cpp)
 
 add_executable(MyBot ${SOURCE_FILES})
 
