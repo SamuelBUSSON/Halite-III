@@ -18,10 +18,10 @@ foreach(dir ${dirs})
 endforeach()
 
 include_directories(${CMAKE_SOURCE_DIR})
-set(SOURCE_FILES "${SOURCE_FILES}" GuiSamBot.cpp)
+set(SOURCE_FILES "${SOURCE_FILES}" GuiSamBot.cpp hlt/BrainTree.h)
 
-add_executable(MyBot ${SOURCE_FILES})
+add_executable(GuiSamBot ${SOURCE_FILES})
 
 if(MINGW)
-    target_link_libraries(MyBot -static)
+    target_link_libraries(GuiSamBot -static)
 endif()
