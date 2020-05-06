@@ -6,14 +6,39 @@
 
 #include <memory>
 
+
 namespace hlt {
     struct Ship : Entity {
-        Halite halite;
+
+		//shared_ptr<BrainTree::BehaviorTree> tree;
+		//static Game* game;
+
+		Command executeCommand;
+		Position * goalPosition;
+
+		Halite halite;
 
         Ship(PlayerId player_id, EntityId ship_id, int x, int y, Halite halite) :
             Entity(player_id, ship_id, x, y),
             halite(halite)
-        {}
+        {
+			executeCommand = stay_still();
+			//CreatingBehaviorTreeUsingBuilders();
+		}
+
+		/*void CreatingBehaviorTreeUsingBuilders()
+		{
+		/*	tree = BrainTree::Builder()
+				.composite<BrainTree::MemSequence>()
+					.leaf<CheckStorage>(shared_ptr<Ship>(this))
+					.leaf<FindHalite>(shared_ptr<Ship>(this))
+					.leaf<GoTo>(shared_ptr<Ship>(this))
+				.end()
+				.build();			
+
+			auto tree = BrainTree::Builder()
+				.build();
+		}*/
 
         bool is_full() const {
             return halite >= constants::MAX_HALITE;
@@ -33,4 +58,5 @@ namespace hlt {
 
         static std::shared_ptr<Ship> _generate(PlayerId player_id);
     };
+
 }

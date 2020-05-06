@@ -1,6 +1,7 @@
 #include "hlt/game.hpp"
 #include "hlt/constants.hpp"
 #include "hlt/log.hpp"
+#include "hlt/shipBrain.hpp"
 
 #include <random>
 #include <ctime>
@@ -24,6 +25,10 @@ int main(int argc, char* argv[]) {
     game.ready("GuiSamBot");
 
     log::log("Successfully created bot! My Player ID is " + to_string(game.my_id) + ". Bot rng seed is " + to_string(rng_seed) + ".");
+	
+	BrainAI shipAi;
+
+	BrainAI::game = &game;
 
     for (;;) {
         game.update_frame();
@@ -33,15 +38,22 @@ int main(int argc, char* argv[]) {
         vector<Command> command_queue;
 
         for (const auto& ship_iterator : me->ships) {
-            shared_ptr<Ship> ship = ship_iterator.second;
-            if (game_map->at(ship)->halite < constants::MAX_HALITE / 10 || ship->is_full()) {
+            shared_ptr<Ship> ship = ship_iterator.second;	
+
+			BrainAI::ship = ship;
+			shipAi.update();
+
+			command_queue.push_back(ship->executeCommand);
+			
+			/*if (game_map->at(ship)->halite < constants::MAX_HALITE / 10 || ship->is_full()) {
                 Direction random_direction = ALL_CARDINALS[rng() % 4];
                 command_queue.push_back(ship->move(Direction::SOUTH));
             } else {
                 command_queue.push_back(ship->stay_still());
-            }
+            }*/
         }
 
+		//Spawn ships
         if (
             game.turn_number <= 200 &&
             me->halite >= constants::SHIP_COST &&
