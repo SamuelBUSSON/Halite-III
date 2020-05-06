@@ -9,6 +9,9 @@
 #include "BrainTree.h"
 
 
+#define HALITE_STORAGE 500
+#define DROPOFF_COST 7000
+#define DIST_DROP_OFF 7
 
 namespace hlt {	
 
@@ -30,9 +33,15 @@ namespace hlt {
 
 
 	
-	class CheckStorage;
+	class CheckStorageInf;
 	class FindHalite;
 	class GoTo;
+	class CheckStorageSup;
+	class DropHalite;
+	class CountNbrTurnsLeft;
+	class CheckDistFromDropPoint;
+	class ConvertToDropPoint;
+	class CheckStorageTotalSup;
 
 	class BrainAI
 	{
@@ -43,6 +52,7 @@ namespace hlt {
 
 			static Game * game;
 			static std::shared_ptr<Ship> ship;
+			static bool dropOffCreated;
 
 			BrainAI()
 			{
@@ -52,15 +62,23 @@ namespace hlt {
 			void buildTree()
 			{
 				tree = BrainTree::Builder()
-					.composite<BrainTree::Sequence>()
-						.leaf<CheckStorageToDrop>()
-						.leaf<DropHalite>()
-						.leaf<GoTo>()
-					.end()
-					.composite<BrainTree::Sequence>()
-						.leaf<CheckStorage>()
-						.leaf<FindHalite>()
-						.leaf<GoTo>()
+					.composite<BrainTree::Selector>()
+						.composite<BrainTree::Sequence>()
+							.leaf<CheckStorageTotalSup>(DROPOFF_COST)
+							.leaf<CountNbrTurnsLeft>(150)
+							.leaf<CheckDistFromDropPoint>(DIST_DROP_OFF)
+							.leaf<ConvertToDropPoint>()
+						.end()
+						.composite<BrainTree::Sequence>()
+							.leaf<CheckStorageSup>(HALITE_STORAGE)
+							.leaf<DropHalite>()
+							.leaf<GoTo>()
+						.end()
+						.composite<BrainTree::Sequence>()
+							.leaf<CheckStorageInf>(HALITE_STORAGE)
+							.leaf<FindHalite>()
+							.leaf<GoTo>()
+						.end()
 					.end()
 					.build();
 			}
@@ -72,21 +90,45 @@ namespace hlt {
 	};
 
 
-	class CheckStorage : public BrainTree::Node
+	class CheckStorageInf : public BrainTree::Node
 	{
+		private:
+			float amount;
+		public:
+			CheckStorageInf(float val) : amount(val){}
+
 		Status update() override
 		{
 			//log::log("Check Storage " + std::to_string(BrainAI::ship->halite));
-			return BrainAI::ship->halite < 500 ? Node::Status::Success : Node::Status::Failure;
+			return BrainAI::ship->halite < amount ? Node::Status::Success : Node::Status::Failure;
 		}
 	};
 
-	class CheckStorageToDrop : public BrainTree::Node
+	class CheckStorageSup : public BrainTree::Node
 	{
+		private:
+			float amount;
+		public:
+			CheckStorageSup(float val) : amount(val) {}
+
 		Status update() override
 		{
 			//log::log("Check Storage " + std::to_string(BrainAI::ship->halite));
-			return BrainAI::ship->halite > 500 ? Node::Status::Success : Node::Status::Failure;
+			return BrainAI::ship->halite > amount ? Node::Status::Success : Node::Status::Failure;
+		}
+	};
+
+	class CheckStorageTotalSup : public BrainTree::Node
+	{
+	private:
+		float amount;
+	public:
+		CheckStorageTotalSup(float val) : amount(val) {}
+
+		Status update() override
+		{
+			//log::log("Check Storage " + std::to_string(BrainAI::ship->halite));
+			return BrainAI::game->me->halite > amount ? Node::Status::Success : Node::Status::Failure;
 		}
 	};
 
@@ -94,21 +136,31 @@ namespace hlt {
 	{
 		Status update() override
 		{
-
 			Position p;
+			MapCell *dropOffPosition;
+			int dist(INT_MAX);
 
 			for (int x = 0; x < BrainAI::game->game_map->width; ++x)
 			{
 				for (int y = 0; y < BrainAI::game->game_map->height; ++y)
 				{
-
-					BrainAI::game->game_map->at(p);
-					/*	
 					p.x = x;
 					p.y = y;
-					*/
+
+					if (BrainAI::game->game_map->at(p)->has_structure() && 
+						BrainAI::game->game_map->at(p)->structure->owner == BrainAI::game->me->id &&
+						BrainAI::game->game_map->calculate_distance(BrainAI::ship->position, p) < dist)
+					{
+						dist = BrainAI::game->game_map->calculate_distance(BrainAI::ship->position, p);
+
+						//log::log("Find drop point " + std::to_string(BrainAI::ship->halite));
+						dropOffPosition = BrainAI::game->game_map->at(p);
+					}		
 				}
 			}
+
+			BrainAI::ship->goalPosition = &dropOffPosition->position;
+
 			return Node::Status::Success;
 		}
 	};
@@ -170,8 +222,74 @@ namespace hlt {
 		}
 	};
 
+	class CountNbrTurnsLeft : public BrainTree::Node
+	{
+		private:
+			int countTurns;
+		public:
+			CountNbrTurnsLeft(int val) : countTurns(val) {}
+
+		Status update() override
+		{
+			log::log("Turn Left " + std::to_string(constants::MAX_TURNS - BrainAI::game->turn_number));
+
+			return  constants::MAX_TURNS - BrainAI::game->turn_number > countTurns ? Node::Status::Success : Node::Status::Failure;
+		}
+	};
+
+	class CheckDistFromDropPoint : public BrainTree::Node
+	{
+		private:
+			int dist;
+		public:
+			CheckDistFromDropPoint(int val) : dist(val) {}
+
+		Status update() override
+		{
+			Position p;			
+
+			if (BrainAI::dropOffCreated)
+			{
+				return Node::Status::Failure;
+			}
+
+			for (int x = 0; x < BrainAI::game->game_map->width; ++x)
+			{
+				for (int y = 0; y < BrainAI::game->game_map->height; ++y)
+				{
+					p.x = x;
+					p.y = y;
+					if (BrainAI::game->game_map->at(p)->has_structure() &&
+						BrainAI::game->game_map->at(p)->structure->owner == BrainAI::game->me->id &&
+						BrainAI::game->game_map->calculate_distance(BrainAI::ship->position, p) > dist)
+					{
+						BrainAI::dropOffCreated = true;
+
+						return Node::Status::Success;
+					}					
+				}
+			}
+
+			return Node::Status::Failure;
+		}
+	};
+
+	class ConvertToDropPoint :  public BrainTree::Node
+	{
+		Status update() override
+		{
+
+			log::log("Create Drop Off " +  std::to_string(BrainAI::ship->id));
+
+			BrainAI::ship->executeCommand = BrainAI::ship->make_dropoff();
+			return  Node::Status::Success;
+		}
+	};
+
+
 	Game * BrainAI::game = nullptr;
 	std::shared_ptr<Ship> BrainAI::ship = nullptr;
+	bool BrainAI::dropOffCreated = false;
 }
 
 

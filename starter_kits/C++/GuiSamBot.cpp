@@ -37,7 +37,9 @@ int main(int argc, char* argv[]) {
 
         vector<Command> command_queue;
 
+		BrainAI::dropOffCreated = false;
         for (const auto& ship_iterator : me->ships) {
+
             shared_ptr<Ship> ship = ship_iterator.second;	
 
 			BrainAI::ship = ship;
@@ -55,9 +57,11 @@ int main(int argc, char* argv[]) {
 
 		//Spawn ships
         if (
-            game.turn_number <= 200 &&
+            game.turn_number <= 100 &&
             me->halite >= constants::SHIP_COST &&
-            !game_map->at(me->shipyard)->is_occupied())
+            !game_map->at(me->shipyard)->is_occupied() &&
+			game.me->ships.size() < 3
+			)
         {
             command_queue.push_back(me->shipyard->spawn());
         }
