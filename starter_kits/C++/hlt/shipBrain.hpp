@@ -4,6 +4,7 @@
 #include "constants.hpp"
 #include "command.hpp"
 #include "game.hpp"
+#include <time.h>       /* time */
 
 #include <memory>
 #include "BrainTree.h"
@@ -216,8 +217,11 @@ namespace hlt {
 		Status update() override
 		{
 			//log::log("Go to " + BrainAI::ship->goalPosition->to_string());
+			
+			BrainAI::ship->executeCommand = BrainAI::ship->move(BrainAI::game->game_map->naive_navigate(BrainAI::ship, *BrainAI::ship->goalPosition));	
 
-			BrainAI::ship->executeCommand = BrainAI::ship->move(BrainAI::game->game_map->naive_navigate(BrainAI::ship, *BrainAI::ship->goalPosition));
+
+
 			return Node::Status::Success;
 		}
 	};

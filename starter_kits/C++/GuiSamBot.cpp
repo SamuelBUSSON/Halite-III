@@ -57,10 +57,11 @@ int main(int argc, char* argv[]) {
 
 		//Spawn ships
         if (
-            game.turn_number <= 100 &&
+            game.turn_number <= 350 &&
             me->halite >= constants::SHIP_COST &&
             !game_map->at(me->shipyard)->is_occupied() &&
-			game.me->ships.size() < 3
+			game.me->ships.size() < 12 &&
+			me->halite >= 1000
 			)
         {
             command_queue.push_back(me->shipyard->spawn());
