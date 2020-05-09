@@ -2,10 +2,14 @@
 
 #include "types.hpp"
 #include "map_cell.hpp"
-
 #include <vector>
+#include <deque>
+
+class AStar;
+
 
 namespace hlt {
+    class Node;
     struct GameMap {
         int width;
         int height;
@@ -86,7 +90,79 @@ namespace hlt {
             return Direction::STILL;
         }
 
+        std::deque<Node *> aStarPath(std::shared_ptr<Ship> ship, Position& destination);
+        Direction aStar_navigate(std::shared_ptr<Ship> ship, std::deque<hlt::Node *> &path);
+
         void _update();
         static std::unique_ptr<GameMap> _generate();
+
     };
+
+
+    class Node {
+    public:
+        Node *parent;
+        const Position &position;
+        double g, h;
+
+        Node(Node *parent, const hlt::Position &position, double g, double h)
+                : parent(parent), position(position), g(g), h(h) {}
+
+        bool operator<(const Node &o) const { return g + h < o.g + o.h; }
+
+        bool operator==(const Node &o) const { return g + h == o.g + o.h; }
+    };
+
+
+    class AStar {
+    private:
+        std::unique_ptr<std::deque<Node *>> open = std::make_unique<std::deque<Node *>>();
+        std::unique_ptr<std::deque<Node *>> closed = std::make_unique<std::deque<Node *>>();
+        std::unique_ptr<std::deque<Node *>> path = std::make_unique<std::deque<Node *>>();
+        GameMap *map;
+        Node *current;
+        Position *start;
+        Position *end;
+
+    public:
+        AStar(GameMap *map) : map(map) {}
+
+        std::deque<Node *> findPathTo(hlt::Position *from, hlt::Position *whereTo);
+
+    private:
+
+        /**
+         * Calculate the Manhattan distance drom the current node to the destination
+         * @return Manhattan distance in int
+         */
+        double distance() {
+            return map->calculate_distance(current->position, *end);
+        }
+
+        /**
+         * A method that computes the Manhattan distance between two locations, and accounts for the toroidal wraparound.
+         * @param from
+         * @param to
+         * @return Manhattan distance in int
+         */
+        double distance(hlt::Position from, hlt::Position to) {
+            return map->calculate_distance(from, to);
+        }
+
+
+        static bool findNeighborInList(const std::deque<Node *> &array, const Node &node) {
+            for (auto n : array) {
+                if (n->position == node.position)
+                    return true;
+            }
+            return false;
+        }
+
+        static bool sorting(Node *a, Node *b) { return *a < *b; }
+
+        void addNeighborsToOpenList();
+
+    };
+
+
 }

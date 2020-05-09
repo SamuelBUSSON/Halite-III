@@ -2,12 +2,12 @@
 #include "hlt/constants.hpp"
 #include "hlt/log.hpp"
 #include "hlt/shipBrain.hpp"
-
 #include <random>
 #include <ctime>
 
 using namespace std;
 using namespace hlt;
+
 
 int main(int argc, char* argv[]) {
     unsigned int rng_seed;
@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
     for (;;) {
         game.update_frame();
         shared_ptr<Player> me = game.me;
-        unique_ptr<GameMap>& game_map = game.game_map;
+        unique_ptr<hlt::GameMap>& game_map = game.game_map;
 
         vector<Command> command_queue;
 

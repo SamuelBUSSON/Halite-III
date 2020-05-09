@@ -217,7 +217,9 @@ namespace hlt {
 		{
 			//log::log("Go to " + BrainAI::ship->goalPosition->to_string());
 
-			BrainAI::ship->executeCommand = BrainAI::ship->move(BrainAI::game->game_map->naive_navigate(BrainAI::ship, *BrainAI::ship->goalPosition));
+			//BrainAI::ship->executeCommand = BrainAI::ship->move(BrainAI::game->game_map->naive_navigate(BrainAI::ship, *BrainAI::ship->goalPosition));
+            std::deque<hlt::Node *> path = BrainAI::game->game_map->aStarPath(BrainAI::ship, *BrainAI::ship->goalPosition);
+            BrainAI::ship->executeCommand = BrainAI::ship->move(BrainAI::game->game_map->aStar_navigate(BrainAI::ship, path));
 			return Node::Status::Success;
 		}
 	};

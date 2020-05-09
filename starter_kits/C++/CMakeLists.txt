@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(GuiSamBot)
+project(MyBot)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2 -Wall -pedantic") ###-Wno-unused-function
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2 -Wall") ##-Wno-unused-function
 
 include_directories(${CMAKE_SOURCE_DIR}/hlt)
 
@@ -18,9 +18,9 @@ foreach(dir ${dirs})
 endforeach()
 
 include_directories(${CMAKE_SOURCE_DIR})
-set(SOURCE_FILES "${SOURCE_FILES}" GuiSamBot.cpp hlt/BrainTree.h)
+set(SOURCE_FILES "${SOURCE_FILES}" GuiSamBot.cpp)
 
-add_executable(GuiSamBot ${SOURCE_FILES})
+add_executable(MyBot ${SOURCE_FILES})
 
 if(MINGW)
     target_link_libraries(GuiSamBot -static)
