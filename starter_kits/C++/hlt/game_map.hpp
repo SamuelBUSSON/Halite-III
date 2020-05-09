@@ -4,12 +4,10 @@
 #include "map_cell.hpp"
 #include <vector>
 #include <list>
-
-class AStar;
-
+#include <set>
 
 namespace hlt {
-    class Node;
+    class AStarPathfind;
     struct GameMap {
         int width;
         int height;
@@ -97,6 +95,8 @@ namespace hlt {
             return Direction::STILL;
         }
 
+        Direction astar_navigate(std::shared_ptr<Ship> ship, const Position& destination);
+
         void _update();
         static std::unique_ptr<GameMap> _generate();
 
@@ -106,124 +106,56 @@ namespace hlt {
     class Node {
     public:
         Node *parent = nullptr;
-        const Position &position;
+        Position & position;
         int dist, cost;
 
-        Node(const Position &position, int dist, int cost = 1) : position(position), dist(dist), cost(cost) {}
+        // dist = h // cost = g
+        inline int f() const {
+            return dist + cost;
+        }
 
-        Node(Node *parent, const Position &position, int dist, int cost) : parent(parent), position(position),
-                                                                                 dist(dist), cost(cost) {}
+        Node(hlt::Position &position, int dist, int cost = 1) : position(position), dist(dist), cost(cost) {}
 
-        bool operator<(const Node &o) const { return dist + cost < o.dist + o.cost; }
+        Node(Node *parent, hlt::Position &position, int dist, int cost) : parent(parent), position(position),
+                                                                                dist(dist), cost(cost) {}
 
-        bool operator == (const Node& o ) { return position == o.position; }
-        bool operator == (const Position& o ) { return position == o; }
+        bool operator<(const Node &o) const { return f() < o.f(); }
+
+        bool operator<(const Node *o) const { return f() < o->f(); }
+
+        bool operator==(const Node &o) { return position == o.position; }
+
+        bool operator==(const hlt::Position &o) { return position == o; }
     };
 
+    class AStarPathfind {
+    private:
+        struct comparef {
+            bool operator()(Node *i, Node *j) const {
+                return i->f() < j->f();
+            }
+        };
 
-    class Point{
+        template<class T>
+        static bool isInSet(const Position &pos, const std::set<Node *, T> &set) {
+            for (auto n : set) {
+                if (n->position == pos)
+                    return true;
+            }
+            return false;
+        }
+
+        template<class T>
+        static Node *getNodeInSet(const std::set<Node *, T> &set, const Position &pos) {
+            for (auto n : set) {
+                if (n->position == pos)
+                    return n;
+            }
+            return nullptr;
+        }
+
     public:
-        int x,y;
-        Point():x(0),y(0){}
-        Point(int x, int y) : x(x), y(y) {}
-        bool operator ==( const Point& o ) const { return o.x == x && o.y == y; }
-        Point operator +( const Point& o ) const { return { o.x + x, o.y + y }; }
-        Position add(const Position & to) const{
-            return {to.x + x, to.y+y};
-        }
+        static std::list<Position *> astar(hlt::Position &start, const hlt::Position &end, GameMap *map);
     };
-
-
-    class AStar {
-    public:
-        GameMap m; Position end, start;
-        Point neighbours[4];
-        std::list<Node> open;
-        std::list<Node> closed;
-
-        AStar() {
-            neighbours[0] = Point(  0, -1 ); neighbours[1] = Point( -1,  0 );
-            neighbours[2] = Point(  0,  1 ); neighbours[3] = Point(  1,  0 );
-        }
-
-        int calcDist( Position& p ){
-            return m.calculate_distance(p, end);
-        }
-
-        bool isValid( Position& p ) {
-            p = m.normalize(p);
-            return true;
-        }
-
-        bool existPoint( Position& p, int cost ) {
-            std::list<Node>::iterator i;
-            i = std::find( closed.begin(), closed.end(), p );
-            if( i != closed.end() ) {
-                if( ( *i ).cost + ( *i ).dist < cost ) return true;
-                else { closed.erase( i ); return false; }
-            }
-            i = std::find( open.begin(), open.end(), p );
-            if( i != open.end() ) {
-                if( ( *i ).cost + ( *i ).dist < cost ) return true;
-                else { open.erase( i ); return false; }
-            }
-            return false;
-        }
-
-        bool fillOpen( Node& n ) {
-            int stepCost, nc, dist;
-            Position neighbour;
-
-            for( int x = 0; x < 4; ++x) {
-
-                stepCost = 1;
-                neighbour = m.normalize(neighbours[x].add(n.position));
-                if( neighbour == end ) return true;
-                if( isValid( neighbour ) && !m.at(neighbour)->is_occupied() ) {
-                    nc = stepCost + n.cost;
-                    dist = calcDist( neighbour );
-                    if( !existPoint( neighbour, nc + dist ) ) {
-                        Node no = Node(&n,neighbour,dist,nc);
-
-                        open.push_back( no );
-                    }
-                }
-            }
-            return false;
-        }
-
-        bool search( Position& s, Position& e, GameMap& mp ) {
-
-            end = e; start = s; m = mp;
-            Node n = Node(s,calcDist(s),0);
-            open.push_back( n );
-            while( !open.empty() ) {
-                //open.sort();
-                Node no = open.front();
-                open.pop_front();
-                closed.push_back( no );
-                if( fillOpen( no ) ) return true;
-            }
-            return false;
-        }
-
-        int path( std::list<Position>& path ) {
-            path.push_front( end );
-            int cost = 1 + closed.back().cost;
-            path.push_front( closed.back().position );
-            Node* parent = closed.back().parent;
-
-            for( auto i = closed.rbegin(); i != closed.rend(); i++ ) {
-                if( ( *i ).position == parent->position && !( ( *i ).position == start ) ) {
-                    path.push_front( ( *i ).position );
-                    parent = ( *i ).parent;
-                }
-            }
-            path.push_front( start );
-            return cost;
-        }
-
-    };
-
 
 }

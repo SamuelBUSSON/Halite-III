@@ -41,3 +41,50 @@ std::unique_ptr<hlt::GameMap> hlt::GameMap::_generate() {
     return map;
 }
 
+std::list<hlt::Position *> hlt::AStarPathfind::astar(hlt::Position &start, const hlt::Position &end, hlt::GameMap *map) {
+    std::set<Node *, comparef> open;
+    std::set<Node *> closed;
+    open.emplace(new Node(start, map->calculate_distance(start, end), 0));
+    Node *current = nullptr;
+    while (!open.empty()) {
+        current = *open.begin();
+        open.erase(current);
+        closed.insert(current);
+
+        if (current->position == end) { // Path as been found !!!!
+            std::list<Position *> path;
+            while (current->parent != nullptr) {
+                path.push_front(&current->position);
+                current = current->parent;
+                log::log("J'ai trouvé, je dépile");
+            }
+            return path;
+        }
+        for (int x(-1); x < 2; ++x) { // Pour tous les voisins !
+            for (int y(-1); y < 2; ++y) {
+                if (abs(x) == abs(y)) continue; //Pas les diagonales ni nous même
+                Position pos = map->normalize(Position(current->position.x + x, current->position.y + y));
+                if (map->at(pos)->ship || isInSet(pos, closed))
+                    continue; //Si ça bloque on passe au(x) voisin(s) suivant
+                Node *neighbour = getNodeInSet(open, pos);
+                if (!isInSet(pos,open) || neighbour->cost > current->cost) {
+                    if (neighbour == nullptr) {
+                        neighbour = new Node(current, pos, map->calculate_distance(pos, end),
+                                             current->cost + 1);
+                        open.insert(neighbour);
+                    } else {
+                        neighbour->cost = current->cost + 1;
+                        neighbour->parent = current;
+                    }
+                }
+            }
+        }
+    }
+    return std::list<Position *>();
+}
+
+hlt::Direction hlt::GameMap::astar_navigate(std::shared_ptr<Ship> ship, const hlt::Position &destination) {
+    std::list<Position*> pos = AStarPathfind::astar(ship->position, destination, this);
+    return naive_navigate(ship,destination);
+}
+
