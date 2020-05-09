@@ -215,12 +215,20 @@ namespace hlt {
 	{
 		Status update() override
 		{
-			//log::log("Go to " + BrainAI::ship->goalPosition->to_string());
+			AStar aStar;
+			Position &s = BrainAI::ship->position;
+			Position &e = *BrainAI::ship->goalPosition;
+            if(aStar.search(s,e,*BrainAI::game->game_map)) {
+                log::log("We found the STARRRRR");
+                BrainAI::ship->executeCommand = BrainAI::ship->move(BrainAI::game->game_map->naive_navigate(BrainAI::ship, *BrainAI::ship->goalPosition));
+            }else {
+                log::log("I guess we did not find the starrrrr");
+                //BrainAI::ship->executeCommand = BrainAI::ship->move(Direction::STILL);
+            }
 
-			//BrainAI::ship->executeCommand = BrainAI::ship->move(BrainAI::game->game_map->naive_navigate(BrainAI::ship, *BrainAI::ship->goalPosition));
-            std::deque<hlt::Node *> path = BrainAI::game->game_map->aStarPath(BrainAI::ship, *BrainAI::ship->goalPosition);
-            BrainAI::ship->executeCommand = BrainAI::ship->move(BrainAI::game->game_map->aStar_navigate(BrainAI::ship, path));
-			return Node::Status::Success;
+
+
+            return Node::Status::Success;
 		}
 	};
 

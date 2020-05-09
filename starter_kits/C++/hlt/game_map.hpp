@@ -3,7 +3,7 @@
 #include "types.hpp"
 #include "map_cell.hpp"
 #include <vector>
-#include <deque>
+#include <list>
 
 class AStar;
 
@@ -45,6 +45,13 @@ namespace hlt {
             return toroidal_dx + toroidal_dy;
         }
 
+        /**
+         * A method that normalizes a position within the bounds of the toroidal map. Useful for handling the wraparound modulus arithmetic on x and y.
+         * For example, if a ship at (x = 31, y = 4) moves to the east on a 32x32 map, the normalized position would be (x = 0, y = 4),
+         * rather than the off-the-map position of (x = 32, y = 4).
+         * @param position
+         * @return
+         */
         Position normalize(const Position& position) {
             const int x = ((position.x % width) + width) % width;
             const int y = ((position.y % height) + height) % height;
@@ -90,9 +97,6 @@ namespace hlt {
             return Direction::STILL;
         }
 
-        std::deque<Node *> aStarPath(std::shared_ptr<Ship> ship, Position& destination);
-        Direction aStar_navigate(std::shared_ptr<Ship> ship, std::deque<hlt::Node *> &path);
-
         void _update();
         static std::unique_ptr<GameMap> _generate();
 
@@ -101,66 +105,123 @@ namespace hlt {
 
     class Node {
     public:
-        Node *parent;
+        Node *parent = nullptr;
         const Position &position;
-        double g, h;
+        int dist, cost;
 
-        Node(Node *parent, const hlt::Position &position, double g, double h)
-                : parent(parent), position(position), g(g), h(h) {}
+        Node(const Position &position, int dist, int cost = 1) : position(position), dist(dist), cost(cost) {}
 
-        bool operator<(const Node &o) const { return g + h < o.g + o.h; }
+        Node(Node *parent, const Position &position, int dist, int cost) : parent(parent), position(position),
+                                                                                 dist(dist), cost(cost) {}
 
-        bool operator==(const Node &o) const { return g + h == o.g + o.h; }
+        bool operator<(const Node &o) const { return dist + cost < o.dist + o.cost; }
+
+        bool operator == (const Node& o ) { return position == o.position; }
+        bool operator == (const Position& o ) { return position == o; }
+    };
+
+
+    class Point{
+    public:
+        int x,y;
+        Point():x(0),y(0){}
+        Point(int x, int y) : x(x), y(y) {}
+        bool operator ==( const Point& o ) const { return o.x == x && o.y == y; }
+        Point operator +( const Point& o ) const { return { o.x + x, o.y + y }; }
+        Position add(const Position & to) const{
+            return {to.x + x, to.y+y};
+        }
     };
 
 
     class AStar {
-    private:
-        std::unique_ptr<std::deque<Node *>> open = std::make_unique<std::deque<Node *>>();
-        std::unique_ptr<std::deque<Node *>> closed = std::make_unique<std::deque<Node *>>();
-        std::unique_ptr<std::deque<Node *>> path = std::make_unique<std::deque<Node *>>();
-        GameMap *map;
-        Node *current;
-        Position *start;
-        Position *end;
-
     public:
-        AStar(GameMap *map) : map(map) {}
+        GameMap m; Position end, start;
+        Point neighbours[4];
+        std::list<Node> open;
+        std::list<Node> closed;
 
-        std::deque<Node *> findPathTo(hlt::Position *from, hlt::Position *whereTo);
-
-    private:
-
-        /**
-         * Calculate the Manhattan distance drom the current node to the destination
-         * @return Manhattan distance in int
-         */
-        double distance() {
-            return map->calculate_distance(current->position, *end);
+        AStar() {
+            neighbours[0] = Point(  0, -1 ); neighbours[1] = Point( -1,  0 );
+            neighbours[2] = Point(  0,  1 ); neighbours[3] = Point(  1,  0 );
         }
 
-        /**
-         * A method that computes the Manhattan distance between two locations, and accounts for the toroidal wraparound.
-         * @param from
-         * @param to
-         * @return Manhattan distance in int
-         */
-        double distance(hlt::Position from, hlt::Position to) {
-            return map->calculate_distance(from, to);
+        int calcDist( Position& p ){
+            return m.calculate_distance(p, end);
         }
 
+        bool isValid( Position& p ) {
+            p = m.normalize(p);
+            return true;
+        }
 
-        static bool findNeighborInList(const std::deque<Node *> &array, const Node &node) {
-            for (auto n : array) {
-                if (n->position == node.position)
-                    return true;
+        bool existPoint( Position& p, int cost ) {
+            std::list<Node>::iterator i;
+            i = std::find( closed.begin(), closed.end(), p );
+            if( i != closed.end() ) {
+                if( ( *i ).cost + ( *i ).dist < cost ) return true;
+                else { closed.erase( i ); return false; }
+            }
+            i = std::find( open.begin(), open.end(), p );
+            if( i != open.end() ) {
+                if( ( *i ).cost + ( *i ).dist < cost ) return true;
+                else { open.erase( i ); return false; }
             }
             return false;
         }
 
-        static bool sorting(Node *a, Node *b) { return *a < *b; }
+        bool fillOpen( Node& n ) {
+            int stepCost, nc, dist;
+            Position neighbour;
 
-        void addNeighborsToOpenList();
+            for( int x = 0; x < 4; ++x) {
+
+                stepCost = 1;
+                neighbour = m.normalize(neighbours[x].add(n.position));
+                if( neighbour == end ) return true;
+                if( isValid( neighbour ) && !m.at(neighbour)->is_occupied() ) {
+                    nc = stepCost + n.cost;
+                    dist = calcDist( neighbour );
+                    if( !existPoint( neighbour, nc + dist ) ) {
+                        Node no = Node(&n,neighbour,dist,nc);
+
+                        open.push_back( no );
+                    }
+                }
+            }
+            return false;
+        }
+
+        bool search( Position& s, Position& e, GameMap& mp ) {
+
+            end = e; start = s; m = mp;
+            Node n = Node(s,calcDist(s),0);
+            open.push_back( n );
+            while( !open.empty() ) {
+                //open.sort();
+                Node no = open.front();
+                open.pop_front();
+                closed.push_back( no );
+                if( fillOpen( no ) ) return true;
+            }
+            return false;
+        }
+
+        int path( std::list<Position>& path ) {
+            path.push_front( end );
+            int cost = 1 + closed.back().cost;
+            path.push_front( closed.back().position );
+            Node* parent = closed.back().parent;
+
+            for( auto i = closed.rbegin(); i != closed.rend(); i++ ) {
+                if( ( *i ).position == parent->position && !( ( *i ).position == start ) ) {
+                    path.push_front( ( *i ).position );
+                    parent = ( *i ).parent;
+                }
+            }
+            path.push_front( start );
+            return cost;
+        }
 
     };
 
