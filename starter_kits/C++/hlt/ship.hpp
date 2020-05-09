@@ -14,7 +14,10 @@ namespace hlt {
 		//static Game* game;
 
 		Command executeCommand;
-		Position * goalPosition;
+		Position goalPosition;
+		std::shared_ptr<Ship> enemy;
+		bool goingToDeposit;
+		Position dropPoint;
 
 		Halite halite;
 
@@ -23,22 +26,8 @@ namespace hlt {
             halite(halite)
         {
 			executeCommand = stay_still();
-			//CreatingBehaviorTreeUsingBuilders();
+			goingToDeposit = false;
 		}
-
-		/*void CreatingBehaviorTreeUsingBuilders()
-		{
-		/*	tree = BrainTree::Builder()
-				.composite<BrainTree::MemSequence>()
-					.leaf<CheckStorage>(shared_ptr<Ship>(this))
-					.leaf<FindHalite>(shared_ptr<Ship>(this))
-					.leaf<GoTo>(shared_ptr<Ship>(this))
-				.end()
-				.build();			
-
-			auto tree = BrainTree::Builder()
-				.build();
-		}*/
 
         bool is_full() const {
             return halite >= constants::MAX_HALITE;
