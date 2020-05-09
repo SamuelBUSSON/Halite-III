@@ -60,19 +60,20 @@ std::list<hlt::Position *> hlt::AStarPathfind::astar(hlt::Position &start, const
             }
             return path;
         }
+        int test(0);
         for (int x(-1); x < 2; ++x) { // Pour tous les voisins !
             for (int y(-1); y < 2; ++y) {
                 if (abs(x) == abs(y)) continue; //Pas les diagonales ni nous même
                 Position pos = map->normalize(Position(current->position.x + x, current->position.y + y));
                 if (map->at(pos)->ship || isInSet(pos, closed))
                     continue; //Si ça bloque on passe au(x) voisin(s) suivant
-                Node *neighbour = getNodeInSet(open, pos);
-                if (!isInSet(pos,open) || neighbour->cost > current->cost) {
-                    if (neighbour == nullptr) {
+                Node *neighbour = getNodeInSet(open, pos); //  TODO: THE ISSUE SEEMS TO COME FROM getNodeInSet
+                if (!isInSet(pos,open) || neighbour->cost > current->cost) { //  SINCE  IT PASSES THIS CONDITION
+                    if (neighbour == nullptr) { // BUT NOT ENTER HERE (WELL ENTER JUST ONE TIME/4)
                         neighbour = new Node(current, pos, map->calculate_distance(pos, end),
                                              current->cost + 1);
                         open.insert(neighbour);
-                    } else {
+                    } else { // WTF  WHY HE FIND TH CORRESPONDING NEIGHBOUR
                         neighbour->cost = current->cost + 1;
                         neighbour->parent = current;
                     }
