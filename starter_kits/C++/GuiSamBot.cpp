@@ -46,13 +46,6 @@ int main(int argc, char* argv[]) {
 			shipAi.update();
 
 			command_queue.push_back(ship->executeCommand);
-			
-			/*if (game_map->at(ship)->halite < constants::MAX_HALITE / 10 || ship->is_full()) {
-                Direction random_direction = ALL_CARDINALS[rng() % 4];
-                command_queue.push_back(ship->move(Direction::SOUTH));
-            } else {
-                command_queue.push_back(ship->stay_still());
-            }*/
         }
 
 		//Spawn ships
@@ -60,8 +53,8 @@ int main(int argc, char* argv[]) {
             game.turn_number <= 350 &&
             me->halite >= constants::SHIP_COST &&
             !game_map->at(me->shipyard)->is_occupied() &&
-			game.me->ships.size() < 12 &&
-			me->halite >= 1000
+			game.me->ships.size() < 7 &&
+			me->halite >= 1500
 			)
         {
             command_queue.push_back(me->shipyard->spawn());

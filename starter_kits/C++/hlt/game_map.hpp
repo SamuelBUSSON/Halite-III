@@ -73,7 +73,8 @@ namespace hlt {
             return possible_moves;
         }
 
-        Direction naive_navigate(std::shared_ptr<Ship> ship, const Position& destination) {
+        Direction naive_navigate(std::shared_ptr<Ship> ship, const Position& destination) 
+		{
 					   
 			// get_unsafe_moves normalizes for us
             for (auto direction : get_unsafe_moves(ship->position, destination))
@@ -98,6 +99,9 @@ namespace hlt {
 						return d;
 					}
 				}
+			}
+			else {
+				log::log("STILL" + std::to_string(ship->id));
 			}
 
             return Direction::STILL;
