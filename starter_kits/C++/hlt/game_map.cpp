@@ -61,6 +61,7 @@ std::vector<hlt::Position *> hlt::AStarPathfind::astar(hlt::Position &start, con
                 current = current->parent;
                 delete(old);
             }
+            totalCost = (totalCost * 10) /100;
             std::reverse(path.begin(),path.end());
             return path;
         }
@@ -70,7 +71,7 @@ std::vector<hlt::Position *> hlt::AStarPathfind::astar(hlt::Position &start, con
                 Position * pos = new Position(current->position.x + x, current->position.y + y);
                 map->normalize(pos);
                 bool isInClosed = isInSet(pos,closed);
-                if ((map->at(*pos)->ship || isInClosed) && *pos != end){
+                if ((map->at(*pos)->ship || isInClosed)){
                     continue; //Si ça bloque on passe au(x) voisin(s) suivant
                 }
                 Node *neighbour = getNodeInSet(open, pos);
@@ -97,13 +98,8 @@ hlt::Direction hlt::GameMap::astar_navigate(std::shared_ptr<Ship> ship, const hl
         return Direction::STILL;
     int cost(0);
     std::vector<Position *> pos = AStarPathfind::astar(ship->position, destination, this,cost);
-
-    log::log("I'm HERE " + ship->position.to_string());
-    for (Position * p : pos){
-        log::log("I want to pass here " + p->to_string());
-    }
-    log::log("TO BE HERE " + destination.to_string());
-    log::log("IT'LL COST ME " + std::to_string(cost));
-    return naive_navigate(ship,destination);
+    if(pos.empty())
+        return naive_navigate(ship,destination);
+    return naive_navigate(ship,*pos[0]);
 }
 
