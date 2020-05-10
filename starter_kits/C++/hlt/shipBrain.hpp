@@ -16,9 +16,8 @@
 #define ENEMY_FLEE_DISTANCE 3
 #define ENEMY_ATTACK_DISTANCE 2
 
-namespace hlt {	
-
-
+namespace hlt 
+{	
 	class UtilsMath
 	{
 		public:
@@ -33,7 +32,10 @@ namespace hlt {
 			}
 	};
 
-	
+	#pragma region ForwardDeclaration
+
+
+
 	class CheckStorageInf;
 	class FindHalite;
 	class GoTo;
@@ -52,15 +54,18 @@ namespace hlt {
 	class CountHaliteOnCase;
 	class CountNbrTurnsLeftMin;
 
+
+#pragma endregion
+
 	class BrainAI
 	{
 		private:
-			std::shared_ptr<BrainTree::Node> tree;
+			std::shared_ptr<BrainTree::Node> p_tree;
 
 		public:			
 
-			static Game * game;
-			static std::shared_ptr<Ship> ship;
+			static Game * p_game;
+			static std::shared_ptr<Ship> p_ship;
 			static bool dropOffCreated;
 
 			BrainAI()
@@ -70,7 +75,7 @@ namespace hlt {
 
 			void buildTree()
 			{
-				tree = BrainTree::Builder()
+				p_tree = BrainTree::Builder()
 					.composite<BrainTree::Selector>()
 						//FLEE SEQUENCE
 						.composite<BrainTree::Sequence>()
@@ -125,7 +130,7 @@ namespace hlt {
 
 			void update()
 			{
-				tree->update();
+				p_tree->update();
 			}
 	};
 
@@ -140,7 +145,7 @@ namespace hlt {
 		Status update() override
 		{
 			//log::log("Check Storage " + std::to_string(BrainAI::ship->halite));
-			return BrainAI::ship->halite < amount ? Node::Status::Success : Node::Status::Failure;
+			return BrainAI::p_ship->halite < amount ? Node::Status::Success : Node::Status::Failure;
 		}
 	};
 
@@ -154,7 +159,7 @@ namespace hlt {
 		Status update() override
 		{
 			//log::log("Check Storage " + std::to_string(BrainAI::ship->halite));
-			return BrainAI::ship->halite > amount ? Node::Status::Success : Node::Status::Failure;
+			return BrainAI::p_ship->halite > amount ? Node::Status::Success : Node::Status::Failure;
 		}
 	};
 
@@ -168,7 +173,7 @@ namespace hlt {
 		Status update() override
 		{
 			//log::log("Check Storage " + std::to_string(BrainAI::ship->halite));
-			return BrainAI::game->me->halite > amount ? Node::Status::Success : Node::Status::Failure;
+			return BrainAI::p_game->me->halite > amount ? Node::Status::Success : Node::Status::Failure;
 		}
 	};
 
@@ -179,29 +184,29 @@ namespace hlt {
 			Position p;
 			MapCell *dropOffPosition;
 			int dist(INT_MAX);
-			log::log("I am gonna to depsit " + std::to_string(BrainAI::ship->goingToDeposit));
+			log::log("I am gonna to depsit " + std::to_string(BrainAI::p_ship->goingToDeposit));
 
-			for (int x = 0; x < BrainAI::game->game_map->width; ++x)
+			for (int x = 0; x < BrainAI::p_game->game_map->width; ++x)
 			{
 				p.x = x;
-				for (int y = 0; y < BrainAI::game->game_map->height; ++y)
+				for (int y = 0; y < BrainAI::p_game->game_map->height; ++y)
 				{
 					p.y = y;
 
-					if (BrainAI::game->game_map->at(p)->has_structure() && 
-						BrainAI::game->game_map->at(p)->structure->owner == BrainAI::game->me->id &&
-						BrainAI::game->game_map->calculate_distance(BrainAI::ship->position, p) < dist)
+					if (BrainAI::p_game->game_map->at(p)->has_structure() &&
+						BrainAI::p_game->game_map->at(p)->structure->owner == BrainAI::p_game->me->id &&
+						BrainAI::p_game->game_map->calculate_distance(BrainAI::p_ship->position, p) < dist)
 					{
-						dist = BrainAI::game->game_map->calculate_distance(BrainAI::ship->position, p);
-						BrainAI::ship->dropPoint = p;
+						dist = BrainAI::p_game->game_map->calculate_distance(BrainAI::p_ship->position, p);
+						BrainAI::p_ship->dropPoint = p;
 						//log::log("Find drop point " + std::to_string(BrainAI::ship->halite));
-						dropOffPosition = BrainAI::game->game_map->at(p);
+						dropOffPosition = BrainAI::p_game->game_map->at(p);
 					}		
 				}
 			}
 
-			BrainAI::ship->goalPosition = dropOffPosition->position;
-			BrainAI::ship->goingToDeposit = true;
+			BrainAI::p_ship->goalPosition = dropOffPosition->position;
+			BrainAI::p_ship->goingToDeposit = true;
 
 			return Node::Status::Success;
 		}
@@ -218,7 +223,7 @@ namespace hlt {
 
 		Status update() override
 		{
-			if (BrainAI::game->game_map->at(BrainAI::ship->position)->halite > HALITE_STORAGE * 0.5f)
+			if (BrainAI::p_game->game_map->at(BrainAI::p_ship->position)->halite > HALITE_STORAGE * 0.5f)
 			{
 				return isReturningSucess ? Node::Status::Success : Node::Status::Failure;
 			}
@@ -227,10 +232,6 @@ namespace hlt {
 			}
 		}
 	};
-
-
-
-
 
 	class FindHalite : public BrainTree::Node
 	{
@@ -245,15 +246,15 @@ namespace hlt {
 
 			int cost(0);
 
-			for (int x = 0; x < BrainAI::game->game_map->width; ++x)
+			for (int x = 0; x < BrainAI::p_game->game_map->width; ++x)
 			{
 				p.x = x;
-				for (int y = 0; y < BrainAI::game->game_map->height; ++y)
+				for (int y = 0; y < BrainAI::p_game->game_map->height; ++y)
 				{
 					p.y = y;
 					cost = 0;
 
-					tempIntereset = calculateInterest(BrainAI::game->game_map->at(p)->halite, BrainAI::game->game_map->calculate_distance(p, BrainAI::ship->position), cost);
+					tempIntereset = calculateInterest(BrainAI::p_game->game_map->at(p)->halite, BrainAI::p_game->game_map->calculate_distance(p, BrainAI::p_ship->position), cost);
 					if (tempIntereset > intereset)
 					{
 						//cost = BrainAI::game->game_map->get_cost(BrainAI::ship, p);
@@ -261,17 +262,25 @@ namespace hlt {
 						/*if (tempIntereset > intereset)
 						{*/
 							intereset = tempIntereset;
-							halitePosition = BrainAI::game->game_map->at(p);
+							halitePosition = BrainAI::p_game->game_map->at(p);
 						//}
 					}
 				}
 			}
 
-			BrainAI::ship->goalPosition = halitePosition->position;
+			BrainAI::p_ship->goalPosition = halitePosition->position;
 			//log::log("FindHalite x:" + std::to_string(halitePosition->position.x) + " y : " + std::to_string(halitePosition->position.y) + " amount : " + std::to_string(halitePosition->halite));
 			return intereset >= 0.0 ? Node::Status::Success : Node::Status::Failure;
 		}
 
+		/**
+		* @brief : Calculate interest to reach this position
+		* @param halite Numbers of halite on posiiton
+		* @param distance Distance to each position
+		* @param totalCost //Unused atm
+		* @return Value between 0 and 1 depending the interest too reach the position
+		*
+		*/		
 		float calculateInterest(float halite, float distance, int totalCost) 
 		{
 			//distance 0 --> 10
@@ -283,7 +292,6 @@ namespace hlt {
 			float costWeight = 1 - UtilsMath::invLerp(0, 3000, totalCost);
 
 			return haliteWeight * distanceWeight * costWeight;
-
 		}
 	};
 
@@ -292,15 +300,14 @@ namespace hlt {
 		Status update() override
 		{
 
-			if (BrainAI::ship->goingToDeposit && BrainAI::ship->position == BrainAI::ship->dropPoint)
+			if (BrainAI::p_ship->goingToDeposit && BrainAI::p_ship->position == BrainAI::p_ship->dropPoint)
 			{
-
-				log::log("Revert goingToDeposit my pos " + BrainAI::ship->position.to_string() + " drop point pos : " + BrainAI::ship->dropPoint.to_string());
-				BrainAI::ship->goingToDeposit = false;
+				//log::log("Revert goingToDeposit my pos " + BrainAI::p_ship->position.to_string() + " drop point pos : " + BrainAI::p_ship->dropPoint.to_string());
+				BrainAI::p_ship->goingToDeposit = false;
 			}
 			//log::log("Go to " + BrainAI::ship->goalPosition->to_string());
 			
-			BrainAI::ship->executeCommand = BrainAI::ship->move(BrainAI::game->game_map->astar_navigate(BrainAI::ship, BrainAI::ship->goalPosition));
+			BrainAI::p_ship->executeCommand = BrainAI::p_ship->move(BrainAI::p_game->game_map->astar_navigate(BrainAI::p_ship, BrainAI::p_ship->goalPosition));
 
 			return Node::Status::Success;
 		}
@@ -315,9 +322,8 @@ namespace hlt {
 
 		Status update() override
 		{
-			log::log("Turn Left " + std::to_string(constants::MAX_TURNS - BrainAI::game->turn_number));
-
-			return  constants::MAX_TURNS - BrainAI::game->turn_number > countTurns ? Node::Status::Success : Node::Status::Failure;
+			//log::log("Turn Left " + std::to_string(constants::MAX_TURNS - BrainAI::p_game->turn_number));
+			return  constants::MAX_TURNS - BrainAI::p_game->turn_number > countTurns ? Node::Status::Success : Node::Status::Failure;
 		}
 	};
 
@@ -331,7 +337,7 @@ namespace hlt {
 		Status update() override
 		{
 			//log::log("Turn Left " + std::to_string(constants::MAX_TURNS - BrainAI::game->turn_number));
-			return  constants::MAX_TURNS - BrainAI::game->turn_number < countTurns ? Node::Status::Success : Node::Status::Failure;
+			return  constants::MAX_TURNS - BrainAI::p_game->turn_number < countTurns ? Node::Status::Success : Node::Status::Failure;
 		}
 	};
 
@@ -351,16 +357,16 @@ namespace hlt {
 				return Node::Status::Failure;
 			}
 
-			for (int x = 0; x < BrainAI::game->game_map->width; ++x)
+			for (int x = 0; x < BrainAI::p_game->game_map->width; ++x)
 			{
 				p.x = x;
-				for (int y = 0; y < BrainAI::game->game_map->height; ++y)
+				for (int y = 0; y < BrainAI::p_game->game_map->height; ++y)
 				{
 					p.y = y;
-					if (BrainAI::game->game_map->at(p)->has_structure() &&
-						BrainAI::game->game_map->at(p)->structure->owner == BrainAI::game->me->id)
+					if (BrainAI::p_game->game_map->at(p)->has_structure() &&
+						BrainAI::p_game->game_map->at(p)->structure->owner == BrainAI::p_game->me->id)
 					{
-						BrainAI::dropOffCreated = BrainAI::game->game_map->calculate_distance(BrainAI::ship->position, p) > dist;
+						BrainAI::dropOffCreated = BrainAI::p_game->game_map->calculate_distance(BrainAI::p_ship->position, p) > dist;
 						if (!BrainAI::dropOffCreated)
 							return Node::Status::Failure;
 					}					
@@ -378,7 +384,7 @@ namespace hlt {
 
 			//log::log("Create Drop Off " +  std::to_string(BrainAI::ship->id));
 
-			BrainAI::ship->executeCommand = BrainAI::ship->make_dropoff();
+			BrainAI::p_ship->executeCommand = BrainAI::p_ship->make_dropoff();
 			return  Node::Status::Success;
 		}
 	};
@@ -396,20 +402,20 @@ namespace hlt {
 		{
 			Position p;
 
-			for (int x = 0; x < BrainAI::game->game_map->width; ++x)
+			for (int x = 0; x < BrainAI::p_game->game_map->width; ++x)
 			{
 				p.x = x;
-				for (int y = 0; y < BrainAI::game->game_map->height; ++y)
+				for (int y = 0; y < BrainAI::p_game->game_map->height; ++y)
 				{
 					p.y = y;
-					if (BrainAI::game->game_map->at(p)->is_occupied() &&
-						BrainAI::game->game_map->at(p)->ship->owner != BrainAI::game->me->id &&
-						BrainAI::game->game_map->calculate_distance(BrainAI::ship->position, p) < dist
+					if (BrainAI::p_game->game_map->at(p)->is_occupied() &&
+						BrainAI::p_game->game_map->at(p)->ship->owner != BrainAI::p_game->me->id &&
+						BrainAI::p_game->game_map->calculate_distance(BrainAI::p_ship->position, p) < dist
 						)
 					{
 
-						log::log("Enemy near my position " + std::to_string(BrainAI::ship->id));
-						BrainAI::ship->enemy = BrainAI::game->game_map->at(p)->ship;
+						//log::log("Enemy near my position " + std::to_string(BrainAI::p_ship->id));
+						BrainAI::p_ship->enemy = BrainAI::p_game->game_map->at(p)->ship;
 						return Node::Status::Success;
 					}
 				}
@@ -422,7 +428,7 @@ namespace hlt {
 	{
 		Status update() override
 		{
-			if (BrainAI::ship->enemy->halite < BrainAI::ship->halite || BrainAI::ship->halite > HALITE_STORAGE || BrainAI::game->me->ships.size() < 4)
+			if (BrainAI::p_ship->enemy->halite < BrainAI::p_ship->halite || BrainAI::p_ship->halite > HALITE_STORAGE || BrainAI::p_game->me->ships.size() < 4)
 			{
 				//log::log("I flee " + std::to_string(BrainAI::ship->id));
 				return Node::Status::Success;
@@ -436,7 +442,7 @@ namespace hlt {
 		Status update() override
 		{
 			//log::log("I am going to depsit id : " + std::to_string(BrainAI::ship->id) + " result : " + std::to_string(BrainAI::ship->goingToDeposit));
-			return BrainAI::ship->goingToDeposit ? Node::Status::Success : Node::Status::Failure;
+			return BrainAI::p_ship->goingToDeposit ? Node::Status::Success : Node::Status::Failure;
 		}
 	};
 
@@ -444,7 +450,9 @@ namespace hlt {
 	{
 		Status update() override
 		{			
-			return (BrainAI::ship->enemy->halite > BrainAI::ship->halite && BrainAI::ship->enemy->halite > 300 && BrainAI::game->me->halite > 3000) ? Node::Status::Success : Node::Status::Failure;
+			return (BrainAI::p_ship->enemy->halite > BrainAI::p_ship->halite && 
+				BrainAI::p_ship->enemy->halite > 300 && 
+				BrainAI::p_game->me->halite > 3000) ? Node::Status::Success : Node::Status::Failure;
 		}
 	};
 
@@ -452,7 +460,7 @@ namespace hlt {
 	{
 		Status update() override
 		{
-			BrainAI::ship->goalPosition = BrainAI::ship->enemy->position;
+			BrainAI::p_ship->goalPosition = BrainAI::p_ship->enemy->position;
 			return Node::Status::Success;
 		}
 	};
@@ -461,35 +469,16 @@ namespace hlt {
 	{
 		Status update() override
 		{
-			Position p = { BrainAI::ship->position.x - BrainAI::ship->enemy->position.x , BrainAI::ship->position.y - BrainAI::ship->enemy->position.y };
+			Position p = { BrainAI::p_ship->position.x - BrainAI::p_ship->enemy->position.x , BrainAI::p_ship->position.y - BrainAI::p_ship->enemy->position.y };
 
-		/*	Position save;
-			Position goalPos = p;
-
-			for (int x = p.x - 2; x < p.x + 2; x++)
-			{
-				save.x = x;
-				for (int y = p.y - 2; y < p.y + 2; y++)
-				{
-					save.y = y;
-					if (BrainAI::game->game_map->at(save)->is_occupied() &&
-						BrainAI::game->game_map->at(save)->ship->owner != BrainAI::game->me->id)
-					{
-						BrainAI::ship->enemy = BrainAI::game->game_map->at(p)->ship;
-						goalPos.x -= BrainAI::ship->enemy->position.x;
-						goalPos.y -= BrainAI::ship->enemy->position.y;
-					}
-				}
-			}*/
-
-			BrainAI::ship->goalPosition = { BrainAI::ship->position.x + p.x, BrainAI::ship->position.y + p.y };
+			BrainAI::p_ship->goalPosition = { BrainAI::p_ship->position.x + p.x, BrainAI::p_ship->position.y + p.y };
 
 			return Node::Status::Success;
 		}
 	};
 
-	Game * BrainAI::game = nullptr;
-	std::shared_ptr<Ship> BrainAI::ship = nullptr;
+	Game * BrainAI::p_game = nullptr;
+	std::shared_ptr<Ship> BrainAI::p_ship = nullptr;
 	bool BrainAI::dropOffCreated = false;
 }
 

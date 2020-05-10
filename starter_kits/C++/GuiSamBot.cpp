@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 	
 	BrainAI shipAi;
 
-	BrainAI::game = &game;
+	BrainAI::p_game = &game;
 
     for (;;) {
         game.update_frame();
@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
 
             shared_ptr<Ship> ship = ship_iterator.second;	
 
-			BrainAI::ship = ship;
+			BrainAI::p_ship = ship;
 			shipAi.update();
 
 			command_queue.push_back(ship->executeCommand);
