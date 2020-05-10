@@ -124,6 +124,8 @@ namespace hlt {
 
         Direction astar_navigate(std::shared_ptr<Ship> ship, const Position& destination);
 
+		int get_cost(std::shared_ptr<Ship> ship, const hlt::Position & destination);
+
         void _update();
         static std::unique_ptr<GameMap> _generate();
 
@@ -157,6 +159,11 @@ namespace hlt {
 
     class AStarPathfind {
     private:
+        struct comparef {
+            bool operator()(Node *i, Node *j) const {
+                return i->f() < j->f();
+            }
+        };
 
         static bool isInSet(Position * pos, const std::set<Node *> &set) {
             for (Node* n : set) {
@@ -166,8 +173,8 @@ namespace hlt {
             return false;
         }
 
-        static Node *getNodeInSet(std::set<Node *, std::less<>> queue, Position * pos) {
-            for (auto n : queue) {
+        static Node *getNodeInSet(std::set<Node *, std::less<Node *>> set, Position * pos) {
+            for (auto n : set) {
                 if (n->position == *pos)
                     return n;
             }

@@ -11,8 +11,8 @@
 
 
 #define HALITE_STORAGE 400
-#define DROPOFF_COST 5000
-#define DIST_DROP_OFF 7
+#define DROPOFF_COST 6000
+#define DIST_DROP_OFF 10
 #define ENEMY_FLEE_DISTANCE 3
 #define ENEMY_ATTACK_DISTANCE 2
 
@@ -101,8 +101,11 @@ namespace hlt {
 								.composite<BrainTree::Sequence>()
 									.leaf<CountNbrTurnsLeftMin>(20)
 									.leaf<CheckStorageSup>(HALITE_STORAGE * 0.25)
-									.leaf<CountHaliteOnCase>(false)
 								.end()
+							.end()
+							.composite<BrainTree::Selector>()
+								.leaf<CountHaliteOnCase>(false)
+								.leaf<CheckStorageSup>(800)
 							.end()
 							.leaf<DropHalite>()
 							.leaf<GoTo>()
@@ -238,21 +241,28 @@ namespace hlt {
 			float intereset(0.0);
 			float tempIntereset;
 
-			Position p;	
+			Position p;			
 
-			
-			
+			int cost(0);
+
 			for (int x = 0; x < BrainAI::game->game_map->width; ++x)
 			{
 				p.x = x;
 				for (int y = 0; y < BrainAI::game->game_map->height; ++y)
 				{
 					p.y = y;
-					tempIntereset = calculateInterest(BrainAI::game->game_map->at(p)->halite, BrainAI::game->game_map->calculate_distance(p, BrainAI::ship->position));
+					cost = 0;
+
+					tempIntereset = calculateInterest(BrainAI::game->game_map->at(p)->halite, BrainAI::game->game_map->calculate_distance(p, BrainAI::ship->position), cost);
 					if (tempIntereset > intereset)
 					{
-						intereset = tempIntereset;
-						halitePosition = BrainAI::game->game_map->at(p);
+						//cost = BrainAI::game->game_map->get_cost(BrainAI::ship, p);
+						//tempIntereset = calculateInterest(BrainAI::game->game_map->at(p)->halite, BrainAI::game->game_map->calculate_distance(p, BrainAI::ship->position), cost);
+						/*if (tempIntereset > intereset)
+						{*/
+							intereset = tempIntereset;
+							halitePosition = BrainAI::game->game_map->at(p);
+						//}
 					}
 				}
 			}
@@ -262,7 +272,7 @@ namespace hlt {
 			return intereset >= 0.0 ? Node::Status::Success : Node::Status::Failure;
 		}
 
-		float calculateInterest(float halite, float distance) 
+		float calculateInterest(float halite, float distance, int totalCost) 
 		{
 			//distance 0 --> 10
 			//Halite 0 --> 1000
@@ -270,8 +280,9 @@ namespace hlt {
 			//Min = Distance = 10 && halite = 0
 			float haliteWeight = UtilsMath::invLerp(0, 1000, halite);
 			float distanceWeight = 1 - UtilsMath::invLerp(0, 10, distance);
+			float costWeight = 1 - UtilsMath::invLerp(0, 3000, totalCost);
 
-			return haliteWeight * distanceWeight;
+			return haliteWeight * distanceWeight * costWeight;
 
 		}
 	};
@@ -350,11 +361,13 @@ namespace hlt {
 						BrainAI::game->game_map->at(p)->structure->owner == BrainAI::game->me->id)
 					{
 						BrainAI::dropOffCreated = BrainAI::game->game_map->calculate_distance(BrainAI::ship->position, p) > dist;
+						if (!BrainAI::dropOffCreated)
+							return Node::Status::Failure;
 					}					
 				}
 			}
 
-			return BrainAI::dropOffCreated ? Node::Status::Success : Node::Status::Failure;
+			return Node::Status::Success;
 		}
 	};
 
@@ -450,7 +463,7 @@ namespace hlt {
 		{
 			Position p = { BrainAI::ship->position.x - BrainAI::ship->enemy->position.x , BrainAI::ship->position.y - BrainAI::ship->enemy->position.y };
 
-			Position save;
+		/*	Position save;
 			Position goalPos = p;
 
 			for (int x = p.x - 2; x < p.x + 2; x++)
@@ -467,9 +480,9 @@ namespace hlt {
 						goalPos.y -= BrainAI::ship->enemy->position.y;
 					}
 				}
-			}
+			}*/
 
-			BrainAI::ship->goalPosition = { BrainAI::ship->position.x + goalPos.x, BrainAI::ship->position.y + goalPos.y };
+			BrainAI::ship->goalPosition = { BrainAI::ship->position.x + p.x, BrainAI::ship->position.y + p.y };
 
 			return Node::Status::Success;
 		}
