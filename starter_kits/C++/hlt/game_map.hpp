@@ -180,9 +180,9 @@ namespace hlt {
         }
 
     public:
-        static std::list<Position *> astar(hlt::Position &start, const hlt::Position &end, GameMap *map, int & totalCost);
+        static std::vector<Position *> astar(hlt::Position &start, const hlt::Position &end, GameMap *map, int & totalCost);
 
-        static std::list<Position *> astar(hlt::Position &start, const hlt::Position &end, GameMap *map){
+        static std::vector<Position *> astar(hlt::Position &start, const hlt::Position &end, GameMap *map){
             int fool(0);
             return astar( start, end, map, fool);
         }

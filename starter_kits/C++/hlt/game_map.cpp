@@ -78,7 +78,7 @@ std::vector<hlt::Position *> hlt::AStarPathfind::astar(hlt::Position &start, con
                 if (!isInOpen || neighbour->cost > current->cost) {
                     if (!isInOpen) {
                         neighbour = new Node(current, *pos, map->calculate_distance(*pos, end),
-                                             current->cost + map->at(*pos)->halite * 10/100);
+                                             current->cost + (map->at(*pos)->halite * 10/100));
                         open.insert(neighbour);
                     } else {
                         neighbour->cost = current->cost + 1;
