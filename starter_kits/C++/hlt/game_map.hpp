@@ -56,6 +56,12 @@ namespace hlt {
             return { x, y };
         }
 
+
+        void normalize( Position * position) {
+            position->x = ((position->x % width) + width) % width;
+            position->y = ((position->y % height) + height) % height;
+        }
+
         std::vector<Direction> get_unsafe_moves(const Position& source, const Position& destination) {
             const auto& normalized_source = normalize(source);
             const auto& normalized_destination = normalize(destination);
@@ -157,26 +163,29 @@ namespace hlt {
             }
         };
 
-        template<class T>
-        static bool isInSet(const Position &pos, const std::set<Node *, T> &set) {
-            for (auto n : set) {
-                if (n->position == pos)
+        static bool isInSet(Position * pos, const std::set<Node *> &set) {
+            for (Node* n : set) {
+                if (n->position.x == pos->x && n->position.y == pos->y )
                     return true;
             }
             return false;
         }
 
-        template<class T>
-        static Node *getNodeInSet(const std::set<Node *, T> &set, const Position &pos) {
+        static Node *getNodeInSet(const std::set<Node *> &set, Position * pos) {
             for (auto n : set) {
-                if (n->position == pos)
+                if (n->position == *pos)
                     return n;
             }
             return nullptr;
         }
 
     public:
-        static std::list<Position *> astar(hlt::Position &start, const hlt::Position &end, GameMap *map);
+        static std::list<Position *> astar(hlt::Position &start, const hlt::Position &end, GameMap *map, int & totalCost);
+
+        static std::list<Position *> astar(hlt::Position &start, const hlt::Position &end, GameMap *map){
+            int fool(0);
+            return astar( start, end, map, fool);
+        }
     };
 
 }
