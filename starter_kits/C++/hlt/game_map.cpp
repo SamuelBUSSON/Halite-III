@@ -41,10 +41,11 @@ std::unique_ptr<hlt::GameMap> hlt::GameMap::_generate() {
     return map;
 }
 
+
 std::vector<hlt::Position *> hlt::AStarPathfind::astar(hlt::Position &start, const hlt::Position &end, hlt::GameMap *map, int & totalCost) {
-    std::set<Node *> open;
+    std::set<Node*, std::less<> > open;
     std::set<Node *> closed;
-    open.emplace(new Node(start, map->calculate_distance(start, end), map->at(start)->halite));
+    open.insert(new Node(start, map->calculate_distance(start, end), map->at(start)->halite));
     Node *current = nullptr;
     while (!open.empty()) {
         current = *open.begin();
@@ -77,13 +78,13 @@ std::vector<hlt::Position *> hlt::AStarPathfind::astar(hlt::Position &start, con
                 Node *neighbour = getNodeInSet(open, pos);
                 bool isInOpen = neighbour != nullptr;
 
-                if (!isInOpen || neighbour->cost > current->cost) {
+                if (!isInOpen || neighbour->cost > current->cost + (map->at(*pos)->halite)) {
                     if (!isInOpen) {
                         neighbour = new Node(current, *pos, map->calculate_distance(*pos, end),
                                              current->cost + (map->at(*pos)->halite));
                         open.insert(neighbour);
                     } else {
-                        neighbour->cost = current->cost + 1;
+                        neighbour->cost = current->cost + (map->at(*pos)->halite);
                         neighbour->parent = current;
                     }
                 }
@@ -102,4 +103,5 @@ hlt::Direction hlt::GameMap::astar_navigate(std::shared_ptr<Ship> ship, const hl
         return naive_navigate(ship,destination);
     return naive_navigate(ship,*pos[0]);
 }
+
 
