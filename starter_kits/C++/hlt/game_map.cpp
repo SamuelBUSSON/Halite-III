@@ -41,7 +41,7 @@ std::unique_ptr<hlt::GameMap> hlt::GameMap::_generate() {
     return map;
 }
 
-std::list<hlt::Position *> hlt::AStarPathfind::astar(hlt::Position &start, const hlt::Position &end, hlt::GameMap *map, int & totalCost) {
+std::vector<hlt::Position *> hlt::AStarPathfind::astar(hlt::Position &start, const hlt::Position &end, hlt::GameMap *map, int & totalCost) {
     std::set<Node *> open;
     std::set<Node *> closed;
     open.emplace(new Node(start, map->calculate_distance(start, end), map->at(start)->halite * 10/100));
@@ -52,14 +52,15 @@ std::list<hlt::Position *> hlt::AStarPathfind::astar(hlt::Position &start, const
         closed.insert(current);
 
         if (current->position == end) { // Path as been found !!!!
-            std::list<Position *> path;
+            std::vector<Position *> path;
             totalCost = current->cost;
             while (current->parent != nullptr) {
-                path.push_front(&current->position);
+                path.push_back(&current->position);
                 Node * old = current;
                 current = current->parent;
                 delete(old);
             }
+            std::reverse(path.begin(),path.end());
             return path;
         }
         for (int x(-1); x < 2; ++x) { // Pour tous les voisins !
@@ -87,15 +88,13 @@ std::list<hlt::Position *> hlt::AStarPathfind::astar(hlt::Position &start, const
             }
         }
     }
-    return std::list<Position *>();
+    return std::vector<Position *>();
 }
 
 hlt::Direction hlt::GameMap::astar_navigate(std::shared_ptr<Ship> ship, const hlt::Position &destination) {
     if(ship->position == destination)
         return Direction::STILL;
-    std::list<Position*> pos = AStarPathfind::astar(ship->position, destination, this);
-    auto myPosInThelist = std::find(pos.begin(),pos.end(),ship->position) ;
-    Position* next = *myPosInThelist++;
-    return naive_navigate(ship, *next);
+    std::vector<Position *> pos = AStarPathfind::astar(ship->position, destination, this);
+    return naive_navigate(ship, *pos[0]);
 }
 
