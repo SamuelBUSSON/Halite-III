@@ -30,6 +30,9 @@ int main(int argc, char* argv[]) {
 
 	BrainAI::p_game = &game;
 
+	int spawnBoatMax = game.players.size() == 2 ? 10 : 5;
+
+
     for (;;) {
         game.update_frame();
         shared_ptr<Player> me = game.me;
@@ -53,7 +56,7 @@ int main(int argc, char* argv[]) {
             game.turn_number <= 350 &&
             me->halite >= constants::SHIP_COST &&
             !game_map->at(me->shipyard)->is_occupied() &&
-			game.me->ships.size() < 10)
+			game.me->ships.size() < spawnBoatMax)
         {
             command_queue.push_back(me->shipyard->spawn());
         }

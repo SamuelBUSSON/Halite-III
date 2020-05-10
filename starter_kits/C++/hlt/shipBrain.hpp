@@ -428,7 +428,7 @@ namespace hlt
 	{
 		Status update() override
 		{
-			if (BrainAI::p_ship->enemy->halite < BrainAI::p_ship->halite || BrainAI::p_ship->halite > HALITE_STORAGE || BrainAI::p_game->me->ships.size() < 4)
+			if (BrainAI::p_ship->enemy->halite < BrainAI::p_ship->halite || BrainAI::p_ship->halite > HALITE_STORAGE || BrainAI::p_game->me->ships.size() < 5)
 			{
 				//log::log("I flee " + std::to_string(BrainAI::ship->id));
 				return Node::Status::Success;
