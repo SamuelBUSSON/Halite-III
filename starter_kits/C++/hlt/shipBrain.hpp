@@ -268,7 +268,7 @@ namespace hlt {
 			}
 			//log::log("Go to " + BrainAI::ship->goalPosition->to_string());
 			
-			BrainAI::ship->executeCommand = BrainAI::ship->move(BrainAI::game->game_map->naive_navigate(BrainAI::ship, BrainAI::ship->goalPosition));
+			BrainAI::ship->executeCommand = BrainAI::ship->move(BrainAI::game->game_map->astar_navigate(BrainAI::ship, BrainAI::ship->goalPosition));
 
 			return Node::Status::Success;
 		}

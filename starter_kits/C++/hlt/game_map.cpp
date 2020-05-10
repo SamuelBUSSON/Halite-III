@@ -44,7 +44,7 @@ std::unique_ptr<hlt::GameMap> hlt::GameMap::_generate() {
 std::vector<hlt::Position *> hlt::AStarPathfind::astar(hlt::Position &start, const hlt::Position &end, hlt::GameMap *map, int & totalCost) {
     std::set<Node *> open;
     std::set<Node *> closed;
-    open.emplace(new Node(start, map->calculate_distance(start, end), map->at(start)->halite * 10/100));
+    open.emplace(new Node(start, map->calculate_distance(start, end), map->at(start)->halite));
     Node *current = nullptr;
     while (!open.empty()) {
         current = *open.begin();
@@ -53,8 +53,9 @@ std::vector<hlt::Position *> hlt::AStarPathfind::astar(hlt::Position &start, con
 
         if (current->position == end) { // Path as been found !!!!
             std::vector<Position *> path;
-            totalCost = current->cost;
+            totalCost += map->at(start)->halite;
             while (current->parent != nullptr) {
+                totalCost += map->at(current->position)->halite;
                 path.push_back(&current->position);
                 Node * old = current;
                 current = current->parent;
@@ -78,7 +79,7 @@ std::vector<hlt::Position *> hlt::AStarPathfind::astar(hlt::Position &start, con
                 if (!isInOpen || neighbour->cost > current->cost) {
                     if (!isInOpen) {
                         neighbour = new Node(current, *pos, map->calculate_distance(*pos, end),
-                                             current->cost + (map->at(*pos)->halite * 10/100));
+                                             current->cost + (map->at(*pos)->halite));
                         open.insert(neighbour);
                     } else {
                         neighbour->cost = current->cost + 1;
@@ -94,7 +95,15 @@ std::vector<hlt::Position *> hlt::AStarPathfind::astar(hlt::Position &start, con
 hlt::Direction hlt::GameMap::astar_navigate(std::shared_ptr<Ship> ship, const hlt::Position &destination) {
     if(ship->position == destination)
         return Direction::STILL;
-    std::vector<Position *> pos = AStarPathfind::astar(ship->position, destination, this);
-    return naive_navigate(ship, *pos[0]);
+    int cost(0);
+    std::vector<Position *> pos = AStarPathfind::astar(ship->position, destination, this,cost);
+
+    log::log("I'm HERE " + ship->position.to_string());
+    for (Position * p : pos){
+        log::log("I want to pass here " + p->to_string());
+    }
+    log::log("TO BE HERE " + destination.to_string());
+    log::log("IT'LL COST ME " + std::to_string(cost));
+    return naive_navigate(ship,destination);
 }
 
